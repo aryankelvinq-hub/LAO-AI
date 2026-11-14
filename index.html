@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAO AI - AI Video Generator</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#080b14;color:white;
+ font-family:Arial,sans-serif;
+}
+header{
+ padding:20px;display:flex;
+ justify-content:space-between;align-items:center;
+ border-bottom:1px solid #252b3b;
+}
+.logo{font-size:27px;font-weight:900;color:#8b7cff}
+.logo span{color:white}
+.tag{color:#a7aabd;font-size:12px}
+main{max-width:650px;margin:35px auto;padding:16px}
+h1{text-align:center;font-size:35px}
+h1 span{color:#927bff}
+.sub{text-align:center;color:#a3a9ba}
+.panel{
+ background:#121827;border:1px solid #293249;
+ padding:20px;border-radius:18px;margin-top:25px;
+}
+.tabs{display:flex;gap:10px}
+button{
+ cursor:pointer;border:0;border-radius:10px;
+ padding:13px;font-weight:bold;
+}
+.tab{flex:1;background:#222c40;color:white}
+.tab.active{background:#7259ed}
+label{display:block;margin:20px 0 9px}
+textarea{
+ width:100%;height:120px;padding:14px;
+ background:#080e1b;border:1px solid #34405a;
+ color:white;border-radius:10px;resize:vertical;
+}
+.upload{
+ border:2px dashed #495477;border-radius:12px;
+ padding:25px;text-align:center;color:#b5bad0;
+}
+.upload input{width:100%;margin-top:12px}
+#preview{max-width:100%;max-height:200px;margin-top:15px}
+.generate{
+ width:100%;margin-top:20px;
+ background:linear-gradient(90deg,#7259ed,#a24fe8);
+ color:white;font-size:16px;
+}
+#status{color:#b9aaff;text-align:center;margin-top:15px}
+footer{text-align:center;color:#7e879d;padding:30px;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">LAO <span>AI</span></div>
+ <div class="tag">NEXT GEN VIDEO STUDIO</div>
+</header>
+
+<main>
+ <h1>Create Videos with <span>AI</span></h1>
+ <p class="sub">Turn your imagination into videos.</p>
+
+ <section class="panel">
+  <div class="tabs">
+   <button class="tab active" id="textTab" onclick="setMode('text')">Text to Video</button>
+   <button class="tab" id="imageTab" onclick="setMode('image')">Image to Video</button>
+  </div>
+
+  <label>Describe your video</label>
+  <textarea id="prompt" placeholder="A beautiful futuristic city at sunset, cinematic camera movement..."></textarea>
+
+  <div id="uploadArea" style="display:none">
+   <label>Upload your image</label>
+   <div class="upload">
+    Select an image to animate
+    <input type="file" id="imageInput" accept="image/*">
+    <img id="preview" style="display:none">
+   </div>
+  </div>
+
+  <button class="generate" onclick="generateVideo()">Generate Video ✨</button>
+  <p id="status"></p>
+ </section>
+</main>
+
+<footer>© 2026 LAO AI · AI VIDEO STUDIO</footer>
+
+<script>
+let mode="text";
+
+function setMode(value){
+ mode=value;
+ document.getElementById("textTab").classList.toggle("active",value==="text");
+ document.getElementById("imageTab").classList.toggle("active",value==="image");
+ document.getElementById("uploadArea").style.display=value==="image"?"block":"none";
+ document.getElementById("status").textContent="";
+}
+
+document.getElementById("imageInput").addEventListener("change",function(){
+ const file=this.files[0];
+ if(!file)return;
+ const preview=document.getElementById("preview");
+ preview.src=URL.createObjectURL(file);
+ preview.style.display="block";
+});
+
+function generateVideo(){
+ const prompt=document.getElementById("prompt").value.trim();
+ const file=document.getElementById("imageInput").files[0];
+ const status=document.getElementById("status");
+
+ if(!prompt){status.textContent="Please enter a video prompt.";return;}
+ if(mode==="image"&&!file){status.textContent="Please upload an image.";return;}
+
+ status.textContent="Your interface is ready! AI generation API is not connected yet.";
+}
+</script>
+</body>
+</html>
