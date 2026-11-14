@@ -3,121 +3,237 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LAO AI - AI Video Generator</title>
+<title>LAO AI — Creator Studio</title>
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;background:#080b14;color:white;
- font-family:Arial,sans-serif;
-}
-header{
- padding:20px;display:flex;
- justify-content:space-between;align-items:center;
- border-bottom:1px solid #252b3b;
-}
-.logo{font-size:27px;font-weight:900;color:#8b7cff}
-.logo span{color:white}
-.tag{color:#a7aabd;font-size:12px}
-main{max-width:650px;margin:35px auto;padding:16px}
-h1{text-align:center;font-size:35px}
-h1 span{color:#927bff}
-.sub{text-align:center;color:#a3a9ba}
-.panel{
- background:#121827;border:1px solid #293249;
- padding:20px;border-radius:18px;margin-top:25px;
-}
-.tabs{display:flex;gap:10px}
-button{
- cursor:pointer;border:0;border-radius:10px;
- padding:13px;font-weight:bold;
-}
-.tab{flex:1;background:#222c40;color:white}
-.tab.active{background:#7259ed}
-label{display:block;margin:20px 0 9px}
-textarea{
- width:100%;height:120px;padding:14px;
- background:#080e1b;border:1px solid #34405a;
- color:white;border-radius:10px;resize:vertical;
-}
-.upload{
- border:2px dashed #495477;border-radius:12px;
- padding:25px;text-align:center;color:#b5bad0;
-}
-.upload input{width:100%;margin-top:12px}
-#preview{max-width:100%;max-height:200px;margin-top:15px}
-.generate{
- width:100%;margin-top:20px;
- background:linear-gradient(90deg,#7259ed,#a24fe8);
- color:white;font-size:16px;
-}
-#status{color:#b9aaff;text-align:center;margin-top:15px}
-footer{text-align:center;color:#7e879d;padding:30px;font-size:12px}
+body{margin:0;background:#090b12;color:#f5f6ff;font-family:Arial,sans-serif}
+header{padding:18px 20px;background:#111522;border-bottom:1px solid #292e40;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
+.logo{font-size:23px;font-weight:900;color:#a78bfa}
+.logo span{color:#fff}
+button,select,input,textarea{font:inherit}
+button{border:0;border-radius:10px;padding:12px 16px;background:#8058ed;color:white;font-weight:bold;cursor:pointer}
+button:active{opacity:.7}
+nav{display:flex;gap:8px;overflow:auto;padding:12px;background:#101421}
+nav button{white-space:nowrap;background:#20263a}
+nav button.active{background:#8058ed}
+main{max-width:850px;margin:auto;padding:18px}
+.page{display:none}
+.page.active{display:block}
+h1{font-size:30px;margin:18px 0 8px}
+.sub{color:#a4abc0;line-height:1.6}
+.card{background:#141a29;border:1px solid #293149;padding:18px;border-radius:17px;margin:15px 0}
+label{display:block;color:#c7cbe0;margin:14px 0 7px}
+input,select,textarea{width:100%;padding:13px;border-radius:10px;border:1px solid #343d55;background:#0c1120;color:white;outline:none}
+textarea{min-height:110px;resize:vertical}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.secondary{background:#293149}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.preset{background:#20263a;border:1px solid #343d55;padding:13px;border-radius:10px;cursor:pointer}
+.preset.selected{border-color:#a78bfa;background:#302452}
+.output{white-space:pre-wrap;background:#0b1020;padding:13px;border-radius:10px;color:#b9c2df;min-height:40px}
+small{color:#9ca5bc}
+footer{text-align:center;padding:30px;color:#858da5}
+@media(max-width:520px){.grid{grid-template-columns:1fr}h1{font-size:25px}}
 </style>
 </head>
 <body>
 <header>
  <div class="logo">LAO <span>AI</span></div>
- <div class="tag">NEXT GEN VIDEO STUDIO</div>
+ <button class="secondary" onclick="go('home')">⌂ Home</button>
 </header>
-
+<nav>
+ <button class="active" onclick="go('home',this)">Home</button>
+ <button onclick="go('video',this)">AI Video</button>
+ <button onclick="go('voice',this)">Text to Voice</button>
+ <button onclick="go('caption',this)">Captions</button>
+ <button onclick="go('effects',this)">Effects</button>
+ <button onclick="go('models',this)">Models</button>
+ <button onclick="go('admin',this)">Admin</button>
+</nav>
 <main>
- <h1>Create Videos with <span>AI</span></h1>
- <p class="sub">Turn your imagination into videos.</p>
-
- <section class="panel">
-  <div class="tabs">
-   <button class="tab active" id="textTab" onclick="setMode('text')">Text to Video</button>
-   <button class="tab" id="imageTab" onclick="setMode('image')">Image to Video</button>
+<section class="page active" id="home">
+ <h1>Your AI Creator Studio</h1>
+ <p class="sub">Create, edit and explore your next-generation content studio. Everything you need in one place.</p>
+ <div class="card">
+  <h2>Welcome to LAO AI</h2>
+  <p class="sub">Your creative space for AI videos, voiceovers, captions and editing ideas.</p>
+  <div class="actions">
+   <button onclick="go('video')">Create Video</button>
+   <button class="secondary" onclick="go('voice')">Create Voice</button>
   </div>
+ </div>
+ <div class="grid">
+  <div class="card"><h3>AI Video</h3><small>Text and image video workspace</small></div>
+  <div class="card"><h3>AI Voice</h3><small>Male and female voice preview</small></div>
+  <div class="card"><h3>Auto Captions</h3><small>Speech recognition demo</small></div>
+  <div class="card"><h3>15 Effects</h3><small>Original editing presets</small></div>
+ </div>
+</section>
 
-  <label>Describe your video</label>
-  <textarea id="prompt" placeholder="A beautiful futuristic city at sunset, cinematic camera movement..."></textarea>
+<section class="page" id="video">
+ <h1>AI Video Studio</h1>
+ <p class="sub">Write a prompt for your next video.</p>
+ <div class="card">
+  <label>Video prompt</label>
+  <textarea id="prompt" placeholder="Describe your video scene..."></textarea>
+  <label>Generation type</label>
+  <select id="videoType"><option>Text to Video</option><option>Image to Video (backend needed)</option></select>
+  <label>Aspect ratio</label>
+  <select><option>9:16 — Shorts / Reels</option><option>16:9 — YouTube</option><option>1:1 — Square</option></select>
+  <button onclick="videoDemo()">Generate Video</button>
+  <div class="output" id="videoResult">Video generation server is not connected yet.</div>
+  <small>Real video generation requires a connected backend and a supported provider.</small>
+ </div>
+</section>
 
-  <div id="uploadArea" style="display:none">
-   <label>Upload your image</label>
-   <div class="upload">
-    Select an image to animate
-    <input type="file" id="imageInput" accept="image/*">
-    <img id="preview" style="display:none">
-   </div>
+<section class="page" id="voice">
+ <h1>Text to Voice</h1>
+ <p class="sub">Browser voice preview. Available voices depend on your device and browser.</p>
+ <div class="card">
+  <label>Your text</label>
+  <textarea id="voiceText" placeholder="Yahan apna Hindi, Hinglish, English ya Urdu text likho..."></textarea>
+  <label>Language</label>
+  <select id="language">
+   <option value="hi-IN">Hindi</option>
+   <option value="en-IN">English</option>
+   <option value="ur-PK">Urdu</option>
+   <option value="en-IN">Hinglish (English voice)</option>
+  </select>
+  <label>Voice</label>
+  <select id="gender"><option value="male">Male</option><option value="female">Female</option></select>
+  <div class="actions">
+   <button onclick="speak()">▶ Preview Voice</button>
+   <button class="secondary" onclick="speechSynthesis.cancel()">Stop</button>
   </div>
+  <small>This is a browser preview, not a downloadable professional TTS service.</small>
+ </div>
+</section>
 
-  <button class="generate" onclick="generateVideo()">Generate Video ✨</button>
-  <p id="status"></p>
- </section>
+<section class="page" id="caption">
+ <h1>Speech to Text</h1>
+ <p class="sub">Use your microphone to test live speech recognition.</p>
+ <div class="card">
+  <label>Recognition language</label>
+  <select id="capLang">
+   <option value="hi-IN">Hindi</option>
+   <option value="en-IN">English</option>
+   <option value="ur-PK">Urdu (browser support varies)</option>
+  </select>
+  <div class="actions">
+   <button onclick="startCaption()">🎙 Start Listening</button>
+   <button class="secondary" onclick="stopCaption()">Stop</button>
+   <button class="secondary" onclick="copyCaption()">Copy Text</button>
+  </div>
+  <label>Recognized captions</label>
+  <textarea id="captions" placeholder="Your recognized speech will appear here..."></textarea>
+  <small>Microphone permission and browser speech-recognition support are required.</small>
+ </div>
+</section>
+
+<section class="page" id="effects">
+ <h1>Editing Effects</h1>
+ <p class="sub">15 original preset ideas for your editing workflow.</p>
+ <div class="card">
+  <div class="grid" id="presetGrid"></div>
+  <p id="selectedEffect" class="output">Choose an effect preset.</p>
+  <small>These are preset selections only. Actual video rendering effects need a rendering engine.</small>
+ </div>
+</section>
+
+<section class="page" id="models">
+ <h1>AI Models</h1>
+ <p class="sub">Connect supported AI services through a secure backend.</p>
+ <div class="card">
+  <h3>Model connections</h3>
+  <p>Video generation: Not connected</p>
+  <p>Text to speech: Browser preview only</p>
+  <p>Speech recognition: Browser demo</p>
+  <p>Database: Not connected</p>
+  <p>Backend API: Not connected</p>
+  <small>Never enter API keys on this public page. Keys must be stored server-side.</small>
+ </div>
+</section>
+
+<section class="page" id="admin">
+ <h1>Admin Panel</h1>
+ <div class="card">
+  <h3>Admin setup pending</h3>
+  <p class="sub">A secure private admin panel needs backend authentication and server-side authorization.</p>
+  <p>Current status: <b>Not activated</b></p>
+  <small>This page is only a frontend placeholder. It does not protect admin access or control live services.</small>
+ </div>
+</section>
 </main>
-
-<footer>© 2026 LAO AI · AI VIDEO STUDIO</footer>
-
+<footer>LAO AI · Your Creator Studio</footer>
 <script>
-let mode="text";
-
-function setMode(value){
- mode=value;
- document.getElementById("textTab").classList.toggle("active",value==="text");
- document.getElementById("imageTab").classList.toggle("active",value==="image");
- document.getElementById("uploadArea").style.display=value==="image"?"block":"none";
- document.getElementById("status").textContent="";
+const pages=["home","video","voice","caption","effects","models","admin"];
+function go(id,btn){
+ pages.forEach(p=>document.getElementById(p).classList.toggle("active",p===id));
+ document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+ if(btn)btn.classList.add("active");
+ history.pushState({page:id},"","#"+id);
+ window.scrollTo(0,0);
 }
-
-document.getElementById("imageInput").addEventListener("change",function(){
- const file=this.files[0];
- if(!file)return;
- const preview=document.getElementById("preview");
- preview.src=URL.createObjectURL(file);
- preview.style.display="block";
+window.addEventListener("popstate",()=>{
+ let id=location.hash.slice(1);
+ if(pages.includes(id))pages.forEach(p=>document.getElementById(p).classList.toggle("active",p===id));
+ else document.getElementById("home").classList.add("active");
 });
-
-function generateVideo(){
- const prompt=document.getElementById("prompt").value.trim();
- const file=document.getElementById("imageInput").files[0];
- const status=document.getElementById("status");
-
- if(!prompt){status.textContent="Please enter a video prompt.";return;}
- if(mode==="image"&&!file){status.textContent="Please upload an image.";return;}
-
- status.textContent="Your interface is ready! AI generation API is not connected yet.";
+function videoDemo(){
+ let p=document.getElementById("prompt").value.trim();
+ document.getElementById("videoResult").textContent=p?
+ "Prompt saved in this demo. Real AI video generation is not connected yet.":
+ "Please enter a video prompt first.";
 }
+function speak(){
+ let text=document.getElementById("voiceText").value.trim();
+ if(!text){alert("Please enter some text.");return}
+ if(!("speechSynthesis" in window)){alert("Speech preview is not supported in this browser.");return}
+ speechSynthesis.cancel();
+ let u=new SpeechSynthesisUtterance(text);
+ u.lang=document.getElementById("language").value;
+ let voices=speechSynthesis.getVoices();
+ let matches=voices.filter(v=>v.lang.toLowerCase().startsWith(u.lang.slice(0,2).toLowerCase()));
+ let gender=document.getElementById("gender").value;
+ if(matches.length){
+  let chosen=matches.find(v=>gender==="female"?/female|woman|zira|samantha/i.test(v.name):/male|man|david|mark/i.test(v.name));
+  u.voice=chosen||matches[0];
+ }
+ speechSynthesis.speak(u);
+}
+let recognition;
+function startCaption(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){alert("Speech recognition is not supported in this browser. Try a supported browser.");return}
+ recognition=new SR();
+ recognition.lang=document.getElementById("capLang").value;
+ recognition.continuous=true;
+ recognition.interimResults=true;
+ recognition.onresult=e=>{
+  let out="";
+  for(let i=0;i<e.results.length;i++)out+=e.results[i][0].transcript+" ";
+  document.getElementById("captions").value=out;
+ };
+ recognition.onerror=e=>alert("Recognition error: "+e.error);
+ recognition.start();
+}
+function stopCaption(){if(recognition)recognition.stop()}
+function copyCaption(){
+ let t=document.getElementById("captions");
+ t.select();document.execCommand("copy");alert("Caption copied.");
+}
+const effects=["Cinematic Glow","Dreamy Blur","Neon Pulse","Vintage Film","Slow Motion Idea","Flash Transition","RGB Split","Soft Focus","Motion Trail","Golden Hour","Dark Drama","Color Pop","Retro VHS","Smooth Zoom","Anime Glow"];
+const grid=document.getElementById("presetGrid");
+effects.forEach(name=>{
+ let b=document.createElement("div");
+ b.className="preset";b.textContent=name;
+ b.onclick=()=>{
+  document.querySelectorAll(".preset").forEach(x=>x.classList.remove("selected"));
+  b.classList.add("selected");
+  document.getElementById("selectedEffect").textContent="Selected preset: "+name+" — rendering engine not connected.";
+ };
+ grid.appendChild(b);
+});
 </script>
 </body>
 </html>
