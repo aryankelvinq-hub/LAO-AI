@@ -1,199 +1,122 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LAO AI - Premium AI Studio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAO AI - AI Video Generator</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#080b13;color:#f5f5ff;font-family:Inter,Arial,sans-serif}
-button,input,textarea{font:inherit}
-button{cursor:pointer}
-header{height:72px;padding:0 6%;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #20273a;background:#0b101c;position:sticky;top:0;z-index:5}
-.logo{font-size:26px;font-weight:900;letter-spacing:-1px}
-.logo span{color:#9275ff}
-nav{display:flex;gap:8px}
-nav button{background:transparent;color:#aab2c8;border:0;padding:12px;font-size:13px}
-nav button.active,nav button:hover{color:#a78bfa}
-.menu{display:none;background:#20263a;color:white;border:0;border-radius:9px;padding:10px}
-main{max-width:1100px;margin:auto;padding:28px 18px}
-.page{display:none}
-.page.active{display:block}
-.hero{text-align:center;padding:65px 10px 40px}
-.tag{color:#a78bfa;font-size:12px;letter-spacing:3px;font-weight:bold}
-h1{font-size:clamp(36px,7vw,65px);line-height:1.1;margin:18px 0}
-.gradient{background:linear-gradient(90deg,#a78bfa,#54d5ed);background-clip:text;color:transparent}
-.muted{color:#929bb1;line-height:1.7}
-.hero p{max-width:570px;margin:15px auto}
-.btn{background:linear-gradient(100deg,#7657ed,#a44ce5);border:0;color:white;padding:14px 22px;border-radius:11px;font-weight:bold}
-.btn.secondary{background:#20283b;border:1px solid #37415c}
-.hero .btn{margin-top:18px}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.card{background:#111827;border:1px solid #283249;border-radius:18px;padding:22px;margin-bottom:17px}
-.card h3{margin-top:5px}
-.card-icon{font-size:27px}
-.section-title{margin:40px 0 18px}
-label{display:block;margin:17px 0 8px;color:#c7cee0;font-size:14px}
-input,textarea,select{width:100%;background:#080e1a;color:white;border:1px solid #35405a;border-radius:10px;padding:14px;outline:none}
-textarea{height:120px;resize:vertical}
-input:focus,textarea:focus{border-color:#9275ff}
-.tabs{display:flex;gap:9px;margin:15px 0}
-.tabs button{flex:1;background:#20283b;color:#bbc2d4;border:0;border-radius:10px;padding:13px}
-.tabs button.active{background:#7657ed;color:white}
-.upload{border:2px dashed #46516e;padding:22px;text-align:center;border-radius:13px;color:#aeb7cb}
-.upload img{max-width:100%;max-height:200px;display:block;margin:15px auto}
-.full{width:100%;margin-top:17px}
-.notice{font-size:12px;color:#aab2c5;line-height:1.6;margin-top:13px}
-.status{color:#bcaaff;font-size:13px;margin-top:12px}
-.pill{display:inline-block;background:#24213e;color:#c6b5ff;padding:6px 10px;border-radius:30px;font-size:11px}
-.model{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.model button{background:#26233f;color:#c9baff;border:1px solid #55458d;border-radius:9px;padding:10px}
-.admin-stat{font-size:28px;font-weight:bold;margin-top:10px}
-.toggle{accent-color:#9174ff;width:auto}
-footer{text-align:center;color:#747f97;padding:35px 10px;border-top:1px solid #20273a;margin-top:60px}
-.hidden{display:none}
-@media(max-width:650px){
- header{padding:0 16px}
- nav{display:none;position:absolute;top:71px;left:0;right:0;background:#101827;padding:12px;flex-direction:column;border-bottom:1px solid #30394d}
- nav.open{display:flex}
- nav button{text-align:left;padding:13px}
- .menu{display:block}
- .grid{grid-template-columns:1fr}
- .hero{padding-top:45px}
+body{
+ margin:0;background:#080b14;color:white;
+ font-family:Arial,sans-serif;
 }
+header{
+ padding:20px;display:flex;
+ justify-content:space-between;align-items:center;
+ border-bottom:1px solid #252b3b;
+}
+.logo{font-size:27px;font-weight:900;color:#8b7cff}
+.logo span{color:white}
+.tag{color:#a7aabd;font-size:12px}
+main{max-width:650px;margin:35px auto;padding:16px}
+h1{text-align:center;font-size:35px}
+h1 span{color:#927bff}
+.sub{text-align:center;color:#a3a9ba}
+.panel{
+ background:#121827;border:1px solid #293249;
+ padding:20px;border-radius:18px;margin-top:25px;
+}
+.tabs{display:flex;gap:10px}
+button{
+ cursor:pointer;border:0;border-radius:10px;
+ padding:13px;font-weight:bold;
+}
+.tab{flex:1;background:#222c40;color:white}
+.tab.active{background:#7259ed}
+label{display:block;margin:20px 0 9px}
+textarea{
+ width:100%;height:120px;padding:14px;
+ background:#080e1b;border:1px solid #34405a;
+ color:white;border-radius:10px;resize:vertical;
+}
+.upload{
+ border:2px dashed #495477;border-radius:12px;
+ padding:25px;text-align:center;color:#b5bad0;
+}
+.upload input{width:100%;margin-top:12px}
+#preview{max-width:100%;max-height:200px;margin-top:15px}
+.generate{
+ width:100%;margin-top:20px;
+ background:linear-gradient(90deg,#7259ed,#a24fe8);
+ color:white;font-size:16px;
+}
+#status{color:#b9aaff;text-align:center;margin-top:15px}
+footer{text-align:center;color:#7e879d;padding:30px;font-size:12px}
 </style>
 </head>
 <body>
 <header>
- <div class="logo">LAO <span>AI.</span></div>
- <button class="menu" onclick="document.querySelector('nav').classList.toggle('open')">☰</button>
- <nav id="nav">
-  <button class="active" onclick="showPage('home',this)">Home</button>
-  <button onclick="showPage('studio',this)">AI Studio</button>
-  <button onclick="showPage('models',this)">AI Models</button>
-  <button onclick="showPage('admin',this)">Admin Panel</button>
- </nav>
+ <div class="logo">LAO <span>AI</span></div>
+ <div class="tag">NEXT GEN VIDEO STUDIO</div>
 </header>
 
 <main>
-<section id="home" class="page active">
- <div class="hero">
-  <div class="tag">WELCOME TO THE FUTURE</div>
-  <h1>Imagine it.<br><span class="gradient">Create with AI.</span></h1>
-  <p class="muted">Transform your imagination into cinematic videos with the next generation AI creative studio.</p>
-  <button class="btn" onclick="showPage('studio')">Start Creating →</button>
- </div>
- <div class="grid">
-  <div class="card"><div class="card-icon">🎬</div><h3>Text to Video</h3><p class="muted">Turn your words into creative video concepts.</p><button class="btn secondary" onclick="showPage('studio')">Explore →</button></div>
-  <div class="card"><div class="card-icon">🖼️</div><h3>Image to Video</h3><p class="muted">Bring your images to life with AI animation.</p><button class="btn secondary" onclick="showPage('studio')">Explore →</button></div>
-  <div class="card"><div class="card-icon">🧠</div><h3>AI Models</h3><p class="muted">Explore different AI providers and models.</p><button class="btn secondary" onclick="showPage('models')">View Models →</button></div>
-  <div class="card"><div class="card-icon">⚙️</div><h3>Creator Studio</h3><p class="muted">A workspace designed for your creativity.</p><button class="btn secondary" onclick="showPage('studio')">Open Studio →</button></div>
- </div>
-</section>
+ <h1>Create Videos with <span>AI</span></h1>
+ <p class="sub">Turn your imagination into videos.</p>
 
-<section id="studio" class="page">
- <div class="section-title"><div class="tag">CREATE SOMETHING AMAZING</div><h1>AI Video Studio</h1><p class="muted">Your imagination is the only limit.</p></div>
- <div class="card">
+ <section class="panel">
   <div class="tabs">
-   <button id="textTab" class="active" onclick="setMode('text')">Text to Video</button>
-   <button id="imageTab" onclick="setMode('image')">Image to Video</button>
+   <button class="tab active" id="textTab" onclick="setMode('text')">Text to Video</button>
+   <button class="tab" id="imageTab" onclick="setMode('image')">Image to Video</button>
   </div>
+
   <label>Describe your video</label>
-  <textarea id="prompt" placeholder="A cinematic futuristic city, flying cars, sunset, smooth camera movement..."></textarea>
-  <div id="uploadArea" class="hidden">
+  <textarea id="prompt" placeholder="A beautiful futuristic city at sunset, cinematic camera movement..."></textarea>
+
+  <div id="uploadArea" style="display:none">
    <label>Upload your image</label>
-   <div class="upload">Choose an image to animate
-    <input id="photo" type="file" accept="image/*">
-    <img id="preview" class="hidden">
+   <div class="upload">
+    Select an image to animate
+    <input type="file" id="imageInput" accept="image/*">
+    <img id="preview" style="display:none">
    </div>
   </div>
-  <label>Video quality</label>
-  <select id="quality"><option>720p</option><option>480p</option></select>
-  <button class="btn full" onclick="generate()">Generate Video ✨</button>
-  <div id="generateStatus" class="status"></div>
-  <p class="notice">AI generation engine is not connected yet. This is the frontend preview; a compatible backend and model are required to generate actual videos.</p>
- </div>
-</section>
 
-<section id="models" class="page">
- <div class="section-title"><div class="tag">CONNECT YOUR AI</div><h1>AI <span class="gradient">Models</span></h1><p class="muted">Choose your preferred AI provider.</p></div>
- <div class="card">
-  <div class="model"><div><span class="pill">VIDEO MODEL</span><h3>Google Gemini / Veo</h3><p class="muted">Video generation where supported by your API access.</p></div><span>💎</span></div>
-  <a href="https://aistudio.google.com/app/apikey" target="_blank" class="muted">Get Gemini API key ↗</a>
-  <label>Gemini API key</label>
-  <input type="password" placeholder="Connect through secure backend later" disabled>
-  <p class="notice">API connection is not implemented yet. Never paste a secret key into this public website.</p>
- </div>
- <div class="card">
-  <div class="model"><div><span class="pill">TEXT MODEL</span><h3>Groq</h3><p class="muted">Fast text and prompt assistance.</p></div><span>⚡</span></div>
-  <a href="https://console.groq.com/keys" target="_blank" class="muted">Get Groq API key ↗</a>
-  <p class="notice">Groq is not a video-generation engine. It can help with text and prompt workflows.</p>
- </div>
- <div class="card">
-  <div class="model"><div><span class="pill">OPEN MODEL</span><h3>Wan Video</h3><p class="muted">Open-weight video generation model for compatible GPU hosting.</p></div><span>🎥</span></div>
-  <a href="https://github.com/Wan-Video/Wan2.2" target="_blank" class="muted">Explore Wan 2.2 ↗</a>
- </div>
-</section>
-
-<section id="admin" class="page">
- <div class="section-title"><div class="tag">PLATFORM MANAGEMENT</div><h1>Admin <span class="gradient">Panel</span></h1><p class="muted">LAO AI control center preview.</p></div>
- <div class="card">
-  <span class="pill">DEMO INTERFACE ONLY</span>
-  <h3>Welcome, Administrator</h3>
-  <p class="notice">This is a visual prototype, not a secured admin system. Changes here do not update the public website. A private backend, database and admin authentication must be built before real control is enabled.</p>
- </div>
- <div class="grid">
-  <div class="card"><div class="muted">AI Models</div><div class="admin-stat">03</div></div>
-  <div class="card"><div class="muted">API Servers</div><div class="admin-stat">00</div></div>
-  <div class="card"><div class="muted">Video Jobs</div><div class="admin-stat">00</div></div>
-  <div class="card"><div class="muted">Platform</div><div class="admin-stat">Demo</div></div>
- </div>
- <div class="card">
-  <h3>Website controls (preview)</h3>
-  <label><input class="toggle" type="checkbox" checked> Show AI Studio</label>
-  <label><input class="toggle" type="checkbox" checked> Show AI Models</label>
-  <label><input class="toggle" type="checkbox" checked> Show homepage cards</label>
-  <p class="notice">These switches are demonstrations only until connected to the admin backend.</p>
- </div>
- <div class="card">
-  <h3>API Server Management</h3>
-  <p class="muted">Add, remove and configure secure API providers from the future backend.</p>
-  <button class="btn secondary" onclick="alert('Backend required to manage API servers.')">+ Add API Server</button>
- </div>
-</section>
+  <button class="generate" onclick="generateVideo()">Generate Video ✨</button>
+  <p id="status"></p>
+ </section>
 </main>
-<footer>© 2026 LAO AI · CREATE WITHOUT LIMITS</footer>
+
+<footer>© 2026 LAO AI · AI VIDEO STUDIO</footer>
 
 <script>
-let mode='text';
-function showPage(id,btn){
- document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
- document.getElementById(id).classList.add('active');
- document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
- if(btn)btn.classList.add('active');
- document.querySelector('nav').classList.remove('open');
- window.scrollTo(0,0);
+let mode="text";
+
+function setMode(value){
+ mode=value;
+ document.getElementById("textTab").classList.toggle("active",value==="text");
+ document.getElementById("imageTab").classList.toggle("active",value==="image");
+ document.getElementById("uploadArea").style.display=value==="image"?"block":"none";
+ document.getElementById("status").textContent="";
 }
-function setMode(m){
- mode=m;
- document.getElementById('textTab').classList.toggle('active',m==='text');
- document.getElementById('imageTab').classList.toggle('active',m==='image');
- document.getElementById('uploadArea').classList.toggle('hidden',m!=='image');
- document.getElementById('generateStatus').textContent='';
-}
-document.getElementById('photo').addEventListener('change',function(){
- const f=this.files[0];if(!f)return;
- const p=document.getElementById('preview');
- p.src=URL.createObjectURL(f);p.classList.remove('hidden');
+
+document.getElementById("imageInput").addEventListener("change",function(){
+ const file=this.files[0];
+ if(!file)return;
+ const preview=document.getElementById("preview");
+ preview.src=URL.createObjectURL(file);
+ preview.style.display="block";
 });
-function generate(){
- const prompt=document.getElementById('prompt').value.trim();
- const photo=document.getElementById('photo').files[0];
- const s=document.getElementById('generateStatus');
- if(!prompt){s.textContent='Please enter your video prompt.';return;}
- if(mode==='image'&&!photo){s.textContent='Please upload an image.';return;}
- s.textContent='Your project is ready for AI connection. Video generation backend is not connected yet.';
+
+function generateVideo(){
+ const prompt=document.getElementById("prompt").value.trim();
+ const file=document.getElementById("imageInput").files[0];
+ const status=document.getElementById("status");
+
+ if(!prompt){status.textContent="Please enter a video prompt.";return;}
+ if(mode==="image"&&!file){status.textContent="Please upload an image.";return;}
+
+ status.textContent="Your interface is ready! AI generation API is not connected yet.";
 }
 </script>
 </body>
