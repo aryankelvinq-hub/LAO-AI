@@ -85,6 +85,7 @@ async function login(){
   sessionStorage.setItem("lao_admin_token",data.token);
   document.getElementById("login").style.display="none";
   document.getElementById("dashboard").style.display="block";
+  loadTools();
   document.getElementById("password").value="";
  }catch(error){
   message.textContent=error.message;
@@ -113,6 +114,7 @@ async function checkSession(){
   if(response.ok && data.authenticated){
    document.getElementById("login").style.display="none";
    document.getElementById("dashboard").style.display="block";
+   loadTools();
   }else{
    sessionStorage.removeItem("lao_admin_token");
   }
@@ -121,6 +123,82 @@ async function checkSession(){
  }
 }
 checkSession();
+ 
+async function loadTools() {
+  const list = document.getElementById("toolsList");
+  const message = document.getElementById("toolsMessage");
+  const token = sessionStorage.getItem("lao_admin_token");
+
+  list.textContent = "Loading tools...";
+
+  try {
+    const response = await fetch(API + "/admin/tools", {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.error || "Failed to load tools");
+
+    list.replaceChildren();
+
+    data.tools.forEach(tool => {
+      const row = document.createElement("div");
+      row.className = "tools";
+
+      const title = document.createElement("strong");
+      title.textContent = tool.display_name;
+
+      const toggle = document.createElement("input");
+      toggle.type = "checkbox";
+      toggle.checked = tool.enabled;
+      toggle.style.width = "22px";
+      toggle.style.marginLeft = "15px";
+
+      const status = document.createElement("span");
+      status.textContent = tool.enabled ? " ON" : " OFF";
+
+      toggle.addEventListener("change", async () => {
+        toggle.disabled = true;
+
+        try {
+          const result = await fetch(API + "/admin/tools", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + token
+            },
+            body: JSON.stringify({
+              tool_name: tool.tool_name,
+              enabled: toggle.checked
+            })
+          });
+
+          if (!result.ok) throw new Error("Update failed");
+
+          status.textContent = toggle.checked ? " ON" : " OFF";
+          message.textContent = "Tool updated successfully";
+        } catch (error) {
+          toggle.checked = !toggle.checked;
+          message.textContent = error.message;
+        } finally {
+          toggle.disabled = false;
+        }
+      });
+
+      row.append(title, toggle, status);
+      list.appendChild(row);
+    });
+
+    message.textContent = "9 tools loaded";
+  } catch (error) {
+    list.textContent = "Unable to load tools";
+    message.textContent = error.message;
+  }
+}
+ 
 </script>
 </body>
 </html>
