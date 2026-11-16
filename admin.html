@@ -96,109 +96,374 @@ async function login(){
 }
 
 async function logout(){
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LAO AI Admin</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#06110e;color:#fff;font-family:Arial;padding:18px}
+.panel{max-width:650px;margin:25px auto;background:#0d1d18;border:1px solid #214b3b;border-radius:18px;padding:22px}
+.logo{text-align:center;color:#55e6a5;font-size:28px;font-weight:bold}
+.sub{text-align:center;color:#91a99c;margin:8px 0 25px}
+h2,h3{color:#55e6a5}
+label{display:block;margin:13px 0 7px;color:#c9ded3}
+input,textarea{width:100%;padding:13px;border:1px solid #315747;border-radius:9px;background:#07130f;color:white;font-size:15px}
+input[type=checkbox]{width:22px;height:22px;vertical-align:middle}
+button{padding:12px 16px;border:0;border-radius:9px;background:#42d99a;color:#052016;font-weight:bold;margin:8px 5px 8px 0;cursor:pointer}
+button.danger{background:#d95353;color:white}
+button.secondary{background:#294b3d;color:white}
+.card{padding:15px;background:#142b22;border:1px solid #315747;border-radius:12px;margin:12px 0}
+.muted{color:#9ab5a7;font-size:13px}
+.msg{margin:10px 0;color:#55e6a5;overflow-wrap:anywhere}
+#error{color:#ff9b9b}
+#dashboard{display:none}
+#login{display:block}
+#providersSection{margin-top:25px}
+</style>
+</head>
+<body>
+<div class="panel">
+<div class="logo">LAO AI</div>
+<div class="sub">Administrator Control Center</div>
+
+<div id="login">
+<h3>Admin Login</h3>
+<label>Admin Password</label>
+<input id="password" type="password" placeholder="Enter admin password">
+<button id="loginBtn" onclick="login()">Secure Login</button>
+<div id="message" class="msg"></div>
+</div>
+
+<div id="dashboard">
+<h2>Welcome, Admin!</h2>
+<button class="secondary" onclick="loadAll()">Refresh All</button>
+
+<section>
+<h3>AI Tools Management</h3>
+<div id="toolsList">Loading tools...</div>
+<div id="toolsMessage" class="msg"></div>
+</section>
+
+<section id="providersSection">
+<h3>API Providers Management</h3>
+<p class="muted">Add and manage your AI API providers. API keys are encrypted on the server.</p>
+
+<div class="card">
+<h3 id="formTitle">Add New Provider</h3>
+
+<input type="hidden" id="providerId">
+
+<label>Provider ID (example: openai)</label>
+<input id="providerName" placeholder="openai">
+
+<label>Display Name</label>
+<input id="displayName" placeholder="OpenAI">
+
+<label>API Base URL (optional)</label>
+<input id="baseUrl" placeholder="https://api.example.com">
+
+<label>Models (comma or new line separated)</label>
+<textarea id="models" rows="4" placeholder="model-one&#10;model-two"></textarea>
+
+<label>API Key</label>
+<input id="apiKey" type="password" placeholder="Paste provider API key">
+
+<label><input id="providerEnabled" type="checkbox"> Enable Provider</label>
+
+<p class="muted" id="keyHint">API key is required for a new provider. For editing, leave it empty to keep the existing key.</p>
+
+<button id="saveProviderBtn" onclick="saveProvider()">Save Provider</button>
+<button class="secondary" onclick="resetProviderForm()">Clear Form</button>
+<div id="providerMessage" class="msg"></div>
+</div>
+
+<h3>Saved Providers</h3>
+<div id="providersList">Loading providers...</div>
+</section>
+
+<button class="danger" onclick="logout()">Logout</button>
+</div>
+</div>
+
+<script>
+const API="https://laoai.aryankelvinq.workers.dev";
+
+function token(){
+ return sessionStorage.getItem("lao_admin_token");
+}
+
+async function apiRequest(path,options={}){
+ const headers={
+  Authorization:"Bearer "+token(),
+  ...(options.body?{"Content-Type":"application/json"}:{})
+ };
+ const response=await fetch(API+path,{...options,headers});
+ const data=await response.json();
+ if(!response.ok) throw new Error(data.error||"Request failed");
+ return data;
+}
+
+async function login(){
+ const password=document.getElementById("password").value;
+ const message=document.getElementById("message");
+ const btn=document.getElementById("loginBtn");
+
+ if(!password){message.textContent="Enter your password";return;}
+
+ btn.disabled=true;
+ btn.textContent="Checking...";
+ message.textContent="";
+
+ try{
+  const response=await fetch(API+"/admin/login",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({password})
+  });
+  const data=await response.json();
+  if(!response.ok) throw new Error(data.error||"Login failed");
+
+  sessionStorage.setItem("lao_admin_token",data.token);
+  document.getElementById("password").value="";
+  showDashboard();
+ }catch(error){
+  message.textContent=error.message;
+ }finally{
+  btn.disabled=false;
+  btn.textContent="Secure Login";
+ }
+}
+
+function showDashboard(){
+ document.getElementById("login").style.display="none";
+ document.getElementById("dashboard").style.display="block";
+ loadAll();
+}
+
+async function checkSession(){
+ if(!token())return;
+ try{
+  const data=await apiRequest("/admin/verify");
+  if(data.authenticated)showDashboard();
+ }catch{
+  sessionStorage.removeItem("lao_admin_token");
+ }
+}
+
+function logout(){
  sessionStorage.removeItem("lao_admin_token");
  document.getElementById("dashboard").style.display="none";
  document.getElementById("login").style.display="block";
 }
 
-async function checkSession(){
- const token=sessionStorage.getItem("lao_admin_token");
- if(!token)return;
+async function loadAll(){
+ await Promise.allSettled([loadTools(),loadProviders()]);
+}
+
+async function loadTools(){
+ const list=document.getElementById("toolsList");
+ const message=document.getElementById("toolsMessage");
+ list.textContent="Loading tools...";
 
  try{
-  const response=await fetch(API+"/admin/verify",{
-   headers:{Authorization:"Bearer "+token}
-  });
-  const data=await response.json();
+  const data=await apiRequest("/admin/tools");
+  list.replaceChildren();
 
-  if(response.ok && data.authenticated){
-   document.getElementById("login").style.display="none";
-   document.getElementById("dashboard").style.display="block";
-   loadTools();
-  }else{
-   sessionStorage.removeItem("lao_admin_token");
-  }
- }catch{
-  sessionStorage.removeItem("lao_admin_token");
+  data.tools.forEach(tool=>{
+   const row=document.createElement("div");
+   row.className="card";
+
+   const title=document.createElement("strong");
+   title.textContent=tool.display_name;
+
+   const toggle=document.createElement("input");
+   toggle.type="checkbox";
+   toggle.checked=tool.enabled;
+   toggle.style.float="right";
+
+   const status=document.createElement("p");
+   status.className="muted";
+   status.textContent=tool.enabled?"ON":"OFF";
+
+   toggle.addEventListener("change",async()=>{
+    toggle.disabled=true;
+    try{
+     await apiRequest("/admin/tools",{
+      method:"POST",
+      body:JSON.stringify({
+       tool_name:tool.tool_name,
+       enabled:toggle.checked
+      })
+     });
+     status.textContent=toggle.checked?"ON":"OFF";
+     message.textContent="Tool updated successfully";
+    }catch(error){
+     toggle.checked=!toggle.checked;
+     message.textContent=error.message;
+    }finally{
+     toggle.disabled=false;
+    }
+   });
+
+   row.append(title,toggle,status);
+   list.appendChild(row);
+  });
+
+  message.textContent=data.tools.length+" tools loaded";
+ }catch(error){
+  list.textContent="Unable to load tools";
+  message.textContent=error.message;
  }
 }
-checkSession();
- 
-async function loadTools() {
-  const list = document.getElementById("toolsList");
-  const message = document.getElementById("toolsMessage");
-  const token = sessionStorage.getItem("lao_admin_token");
 
-  list.textContent = "Loading tools...";
-
-  try {
-    const response = await fetch(API + "/admin/tools", {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) throw new Error(data.error || "Failed to load tools");
-
-    list.replaceChildren();
-
-    data.tools.forEach(tool => {
-      const row = document.createElement("div");
-      row.className = "tools";
-
-      const title = document.createElement("strong");
-      title.textContent = tool.display_name;
-
-      const toggle = document.createElement("input");
-      toggle.type = "checkbox";
-      toggle.checked = tool.enabled;
-      toggle.style.width = "22px";
-      toggle.style.marginLeft = "15px";
-
-      const status = document.createElement("span");
-      status.textContent = tool.enabled ? " ON" : " OFF";
-
-      toggle.addEventListener("change", async () => {
-        toggle.disabled = true;
-
-        try {
-          const result = await fetch(API + "/admin/tools", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + token
-            },
-            body: JSON.stringify({
-              tool_name: tool.tool_name,
-              enabled: toggle.checked
-            })
-          });
-
-          if (!result.ok) throw new Error("Update failed");
-
-          status.textContent = toggle.checked ? " ON" : " OFF";
-          message.textContent = "Tool updated successfully";
-        } catch (error) {
-          toggle.checked = !toggle.checked;
-          message.textContent = error.message;
-        } finally {
-          toggle.disabled = false;
-        }
-      });
-
-      row.append(title, toggle, status);
-      list.appendChild(row);
-    });
-
-    message.textContent = "9 tools loaded";
-  } catch (error) {
-    list.textContent = "Unable to load tools";
-    message.textContent = error.message;
-  }
+function resetProviderForm(){
+ document.getElementById("providerId").value="";
+ document.getElementById("providerName").value="";
+ document.getElementById("providerName").disabled=false;
+ document.getElementById("displayName").value="";
+ document.getElementById("baseUrl").value="";
+ document.getElementById("models").value="";
+ document.getElementById("apiKey").value="";
+ document.getElementById("providerEnabled").checked=false;
+ document.getElementById("formTitle").textContent="Add New Provider";
+ document.getElementById("keyHint").textContent="API key is required for a new provider.";
+ document.getElementById("providerMessage").textContent="";
 }
- 
+
+async function loadProviders(){
+ const list=document.getElementById("providersList");
+ list.textContent="Loading providers...";
+
+ try{
+  const data=await apiRequest("/admin/providers");
+  list.replaceChildren();
+
+  if(!data.providers.length){
+   list.textContent="No providers added yet.";
+   return;
+  }
+
+  data.providers.forEach(provider=>{
+   const card=document.createElement("div");
+   card.className="card";
+
+   const name=document.createElement("strong");
+   name.textContent=provider.display_name;
+
+   const status=document.createElement("p");
+   status.className="muted";
+   status.textContent=provider.enabled?"Enabled":"Disabled";
+
+   const model=document.createElement("p");
+   model.className="muted";
+   model.textContent="Models: "+(provider.models||[]).join(", ");
+
+   const key=document.createElement("p");
+   key.className="muted";
+   key.textContent="API key: Stored securely (not displayed)";
+
+   const edit=document.createElement("button");
+   edit.textContent="Edit";
+   edit.className="secondary";
+   edit.onclick=()=>editProvider(provider);
+
+   const remove=document.createElement("button");
+   remove.textContent="Delete";
+   remove.className="danger";
+   remove.onclick=()=>deleteProvider(provider.id,provider.display_name);
+
+   card.append(name,status,model,key,edit,remove);
+   list.appendChild(card);
+  });
+ }catch(error){
+  list.textContent="Unable to load providers: "+error.message;
+ }
+}
+
+function editProvider(provider){
+ document.getElementById("providerId").value=provider.id;
+ document.getElementById("providerName").value=provider.provider_name;
+ document.getElementById("providerName").disabled=true;
+ document.getElementById("displayName").value=provider.display_name;
+ document.getElementById("baseUrl").value=provider.base_url||"";
+ document.getElementById("models").value=(provider.models||[]).join("\n");
+ document.getElementById("apiKey").value="";
+ document.getElementById("providerEnabled").checked=provider.enabled;
+ document.getElementById("formTitle").textContent="Edit Provider";
+ document.getElementById("keyHint").textContent="Leave API key empty to keep the saved key.";
+ document.getElementById("providerMessage").textContent="Editing "+provider.display_name;
+ window.scrollTo({top:document.getElementById("providersSection").offsetTop,behavior:"smooth"});
+}
+
+async function saveProvider(){
+ const button=document.getElementById("saveProviderBtn");
+ const message=document.getElementById("providerMessage");
+ const models=document.getElementById("models").value
+  .split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
+
+ const body={
+  provider_name:document.getElementById("providerName").value.trim(),
+  display_name:document.getElementById("displayName").value.trim(),
+  base_url:document.getElementById("baseUrl").value.trim(),
+  models,
+  enabled:document.getElementById("providerEnabled").checked
+ };
+
+ const id=document.getElementById("providerId").value;
+ const apiKey=document.getElementById("apiKey").value;
+
+ if(id)body.id=id;
+ if(apiKey)body.api_key=apiKey;
+
+ if(!body.provider_name||!body.display_name){
+  message.textContent="Provider ID and Display Name are required";
+  return;
+ }
+
+ if(!id&&!apiKey){
+  message.textContent="API key is required for a new provider";
+  return;
+ }
+
+ button.disabled=true;
+ button.textContent="Saving...";
+
+ try{
+  const data=await apiRequest("/admin/providers",{
+   method:"POST",
+   body:JSON.stringify(body)
+  });
+  message.textContent=data.message||"Provider saved";
+  resetProviderForm();
+  await loadProviders();
+ }catch(error){
+  message.textContent=error.message;
+ }finally{
+  button.disabled=false;
+  button.textContent="Save Provider";
+ }
+}
+
+async function deleteProvider(id,name){
+ if(!confirm("Delete provider "+name+"?"))return;
+
+ const message=document.getElementById("providerMessage");
+ try{
+  const data=await apiRequest("/admin/providers",{
+   method:"DELETE",
+   body:JSON.stringify({id})
+  });
+  message.textContent=data.message||"Provider deleted";
+  await loadProviders();
+ }catch(error){
+  message.textContent=error.message;
+ }
+}
+
+checkSession();
 </script>
 </body>
 </html>
