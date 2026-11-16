@@ -1,16 +1,17 @@
-
 const ALLOWED_ORIGIN = "https://aryankelvinq-hub.github.io";
 const SESSION_HOURS = 6;
+const MAX_BODY_SIZE = 100000;
 
-function json(data, status = 200, origin = ALLOWED_ORIGIN) {
+function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+      "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Vary": "Origin"
+      "Vary": "Origin",
+      "Cache-Control": "no-store"
     }
   });
 }
@@ -28,6 +29,7 @@ function fromBase64url(value) {
 }
 
 async function hmacSign(value, secret) {
+  if (!secret) throw new Error("Session secret missing");
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -45,11 +47,9 @@ async function createToken(env) {
     role: "admin",
     exp: Date.now() + SESSION_HOURS * 60 * 60 * 1000
   })));
-
   const signature = base64url(
     await hmacSign(payload, env.ADMIN_SESSION_SECRET)
   );
-
   return payload + "." + signature;
 }
 
@@ -58,13 +58,11 @@ async function verifyToken(request, env) {
     const header = request.headers.get("Authorization") || "";
     if (!header.startsWith("Bearer ")) return false;
 
-    const token = header.slice(7);
-    const parts = token.split(".");
+    const parts = header.slice(7).split(".");
     if (parts.length !== 2) return false;
 
     const expected = await hmacSign(parts[0], env.ADMIN_SESSION_SECRET);
     const actual = fromBase64url(parts[1]);
-
     if (expected.length !== actual.length) return false;
 
     let diff = 0;
@@ -76,7 +74,6 @@ async function verifyToken(request, env) {
     const payload = JSON.parse(
       new TextDecoder().decode(fromBase64url(parts[0]))
     );
-
     return payload.role === "admin" && payload.exp > Date.now();
   } catch {
     return false;
@@ -86,9 +83,8 @@ async function verifyToken(request, env) {
 function encryptionKey(env) {
   const hex = env.PROVIDER_ENCRYPTION_KEY || "";
   if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
-    throw new Error("Invalid PROVIDER_ENCRYPTION_KEY");
+    throw new Error("Provider encryption configuration missing");
   }
-
   return new Uint8Array(
     hex.match(/.{2}/g).map(x => parseInt(x, 16))
   );
@@ -102,19 +98,16 @@ async function providerEncrypt(plainText, env) {
     false,
     ["encrypt"]
   );
-
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encrypted = await crypto.subtle.encrypt(
     { name: "AES-GCM", iv },
     key,
     new TextEncoder().encode(plainText)
   );
-
-  const combined = new Uint8Array(12 + encrypted.byteLength);
-  combined.set(iv);
-  combined.set(new Uint8Array(encrypted), 12);
-
-  return base64url(combined);
+  const result = new Uint8Array(12 + encrypted.byteLength);
+  result.set(iv);
+  result.set(new Uint8Array(encrypted), 12);
+  return base64url(result);
 }
 
 async function providerDecrypt(cipherText, env) {
@@ -125,18 +118,21 @@ async function providerDecrypt(cipherText, env) {
     false,
     ["decrypt"]
   );
-
   const bytes = fromBase64url(cipherText);
+  if (bytes.length <= 12) throw new Error("Invalid encrypted key");
+
   const decrypted = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: bytes.slice(0, 12) },
     key,
     bytes.slice(12)
   );
-
   return new TextDecoder().decode(decrypted);
 }
 
 function supabaseHeaders(env, extra = {}) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY) {
+    throw new Error("Database configuration missing");
+  }
   return {
     "apikey": env.SUPABASE_SECRET_KEY,
     "Authorization": "Bearer " + env.SUPABASE_SECRET_KEY,
@@ -146,7 +142,7 @@ function supabaseHeaders(env, extra = {}) {
 }
 
 async function dbRequest(env, table, query = "", options = {}) {
-  const url = env.SUPABASE_URL.replace(/\/$/, "") +
+  const url = env.SUPABASE_URL.replace(/\/+$/, "") +
     "/rest/v1/" + table + query;
 
   return fetch(url, {
@@ -156,21 +152,39 @@ async function dbRequest(env, table, query = "", options = {}) {
   });
 }
 
+async function readBody(request) {
+  const length = Number(request.headers.get("Content-Length") || 0);
+  if (length > MAX_BODY_SIZE) throw new Error("Request too large");
+  return request.json();
+}
+
+function validBaseUrl(value) {
+  if (!value) return null;
+  try {
+    const url = new URL(String(value).trim());
+    if (url.protocol !== "https:") return false;
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return false;
+  }
+}
+
 async function handleAdmin(request, env, pathname) {
   if (pathname === "/admin/login" && request.method === "POST") {
-    const body = await request.json();
-
+    const body = await readBody(request);
     const password = body.password || body.admin_password;
+
     if (!password || password !== env.ADMIN_PASSWORD) {
       return json({ error: "Invalid admin password" }, 401);
     }
 
-    const token = await createToken(env);
-    return json({ success: true, token });
+    return json({
+      success: true,
+      token: await createToken(env)
+    });
   }
 
-  const valid = await verifyToken(request, env);
-  if (!valid) {
+  if (!(await verifyToken(request, env))) {
     return json({ error: "Unauthorized. Please login again." }, 401);
   }
 
@@ -186,14 +200,13 @@ async function handleAdmin(request, env, pathname) {
     );
 
     if (!response.ok) {
-      return json({ error: "Unable to load tools", detail: await response.text() }, 500);
+      return json({ error: "Unable to load tools" }, 500);
     }
-
     return json({ tools: await response.json() });
   }
 
   if (pathname === "/admin/tools" && request.method === "POST") {
-    const body = await request.json();
+    const body = await readBody(request);
 
     if (typeof body.tool_name !== "string" ||
         typeof body.enabled !== "boolean") {
@@ -212,9 +225,8 @@ async function handleAdmin(request, env, pathname) {
     );
 
     if (!response.ok) {
-      return json({ error: "Tool update failed", detail: await response.text() }, 500);
+      return json({ error: "Tool update failed" }, 500);
     }
-
     return json({ success: true, message: "Tool updated successfully" });
   }
 
@@ -222,54 +234,67 @@ async function handleAdmin(request, env, pathname) {
     const response = await dbRequest(
       env,
       "lao_ai_providers",
-      "?select=id,provider_name,display_name,base_url,models,enabled,created_at,updated_at&order=display_name.asc"
+      "?select=id,provider_name,display_name,base_url,models,enabled,api_key_ciphertext,created_at,updated_at&order=display_name.asc"
     );
 
     if (!response.ok) {
-      return json({ error: "Unable to load providers", detail: await response.text() }, 500);
+      return json({ error: "Unable to load providers" }, 500);
     }
 
-    const providers = await response.json();
-    return json({
-      providers: providers.map(p => ({
-        ...p,
-        has_api_key: false
-      }))
-    });
+    const rows = await response.json();
+    const providers = rows.map(p => ({
+      id: p.id,
+      provider_name: p.provider_name,
+      display_name: p.display_name,
+      base_url: p.base_url,
+      models: p.models,
+      enabled: p.enabled,
+      has_api_key: Boolean(p.api_key_ciphertext),
+      created_at: p.created_at,
+      updated_at: p.updated_at
+    }));
+
+    return json({ providers });
   }
 
   if (pathname === "/admin/providers" && request.method === "POST") {
-    const body = await request.json();
+    const body = await readBody(request);
 
     const providerName = String(body.provider_name || "").trim();
     const displayName = String(body.display_name || "").trim();
 
-    if (!providerName || !displayName) {
-      return json({ error: "provider_name and display_name are required" }, 400);
-    }
-
     if (!/^[a-zA-Z0-9_-]{2,60}$/.test(providerName)) {
-      return json({ error: "Invalid provider_name" }, 400);
+      return json({ error: "Invalid provider name" }, 400);
+    }
+    if (!displayName || displayName.length > 100) {
+      return json({ error: "Valid display name is required" }, 400);
+    }
+    if (body.models !== undefined &&
+        (!Array.isArray(body.models) ||
+         body.models.length > 100 ||
+         !body.models.every(m => typeof m === "string" && m.length <= 200))) {
+      return json({ error: "Invalid models list" }, 400);
     }
 
-    if (body.models !== undefined && !Array.isArray(body.models)) {
-      return json({ error: "models must be an array" }, 400);
+    const baseUrl = validBaseUrl(body.base_url);
+    if (body.base_url && !baseUrl) {
+      return json({ error: "Base URL must be a valid HTTPS URL" }, 400);
     }
 
     const record = {
       provider_name: providerName,
       display_name: displayName,
-      base_url: body.base_url ? String(body.base_url).trim() : null,
+      base_url: baseUrl,
       models: body.models || [],
       enabled: body.enabled === true,
       updated_at: new Date().toISOString()
     };
 
     if (body.api_key) {
-      record.api_key_ciphertext = await providerEncrypt(
-        String(body.api_key),
-        env
-      );
+      if (typeof body.api_key !== "string" || body.api_key.length > 5000) {
+        return json({ error: "Invalid API key value" }, 400);
+      }
+      record.api_key_ciphertext = await providerEncrypt(body.api_key, env);
     }
 
     let response;
@@ -303,25 +328,28 @@ async function handleAdmin(request, env, pathname) {
     }
 
     if (!response.ok) {
-      return json({ error: "Provider save failed", detail: await response.text() }, 500);
+      return json({ error: "Provider save failed" }, 500);
     }
 
     return json({ success: true, message: "Provider saved successfully" });
   }
 
   if (pathname === "/admin/providers" && request.method === "DELETE") {
-    const body = await request.json();
+    const body = await readBody(request);
     if (!body.id) return json({ error: "Provider id is required" }, 400);
 
     const response = await dbRequest(
       env,
       "lao_ai_providers",
       "?id=eq." + encodeURIComponent(String(body.id)),
-      { method: "DELETE", headers: { "Prefer": "return=minimal" } }
+      {
+        method: "DELETE",
+        headers: { "Prefer": "return=minimal" }
+      }
     );
 
     if (!response.ok) {
-      return json({ error: "Provider delete failed", detail: await response.text() }, 500);
+      return json({ error: "Provider delete failed" }, 500);
     }
 
     return json({ success: true, message: "Provider deleted successfully" });
@@ -333,7 +361,6 @@ async function handleAdmin(request, env, pathname) {
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
-    const allowedOrigin = origin === ALLOWED_ORIGIN ? origin : ALLOWED_ORIGIN;
 
     if (request.method === "OPTIONS") {
       if (origin !== ALLOWED_ORIGIN) {
@@ -343,7 +370,7 @@ export default {
         status: 204,
         headers: {
           "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
           "Vary": "Origin"
         }
@@ -359,20 +386,20 @@ export default {
 
     try {
       if (pathname === "/health" && request.method === "GET") {
-        return json({ status: "online", service: "LAO AI Backend" }, 200, allowedOrigin);
+        return json({ status: "online", service: "LAO AI Backend" });
       }
 
       if (pathname.startsWith("/admin/")) {
         return await handleAdmin(request, env, pathname);
       }
 
-      return json({ error: "Not found" }, 404, allowedOrigin);
+      return json({ error: "Not found" }, 404);
     } catch (error) {
-      return json({
-        error: "Internal server error",
-        message: error.message || "Unknown error"
-      }, 500, allowedOrigin);
+      // Do not expose database responses, secrets, or stack traces.
+      const message = error.message === "Request too large"
+        ? "Request too large"
+        : "Internal server error";
+      return json({ error: message }, error.message === "Request too large" ? 413 : 500);
     }
   }
 };
-        
