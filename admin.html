@@ -56,7 +56,6 @@ button.secondary{background:#294b3d;color:white}
 
 <div class="card">
 <h3 id="formTitle">Add New Provider</h3>
-
 <input type="hidden" id="providerId">
 
 <label>Provider ID (example: openai)</label>
@@ -75,7 +74,6 @@ button.secondary{background:#294b3d;color:white}
 <input id="apiKey" type="password" placeholder="Paste provider API key">
 
 <label><input id="providerEnabled" type="checkbox"> Enable Provider</label>
-
 <p class="muted" id="keyHint">API key is required for a new provider. For editing, leave it empty to keep the existing key.</p>
 
 <button id="saveProviderBtn" onclick="saveProvider()">Save Provider</button>
@@ -92,7 +90,7 @@ button.secondary{background:#294b3d;color:white}
 </div>
 
 <script>
-const API="https://laoai.aryankelvinq.workers.dev";
+const API="https://laoai-v2.aryankelvinq.workers.dev";
 
 function token(){
  return sessionStorage.getItem("lao_admin_token");
@@ -128,7 +126,6 @@ async function login(){
   });
   const data=await response.json();
   if(!response.ok) throw new Error(data.error||"Login failed");
-
   sessionStorage.setItem("lao_admin_token",data.token);
   document.getElementById("password").value="";
   showDashboard();
@@ -352,8 +349,8 @@ async function saveProvider(){
 
 async function deleteProvider(id,name){
  if(!confirm("Delete provider "+name+"?"))return;
-
  const message=document.getElementById("providerMessage");
+
  try{
   const data=await apiRequest("/admin/providers",{
    method:"DELETE",
