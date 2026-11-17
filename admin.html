@@ -114,9 +114,22 @@ async function apiRequest(path,options={}){
   Authorization:"Bearer "+token(),
   ...(options.body?{"Content-Type":"application/json"}:{})
  };
+
  const response=await fetch(API+path,{...options,headers});
- const data=await response.json();
- if(!response.ok) throw new Error(data.error||"Request failed");
+ let data;
+
+ try{
+  data=await response.json();
+ }catch{
+  throw new Error("Server returned an invalid response");
+ }
+
+ if(!response.ok){
+  const error=new Error(data.error||"Request failed");
+  error.debug=data.debug;
+  throw error;
+ }
+
  return data;
 }
 
@@ -176,7 +189,7 @@ async function loadAll(){
  await Promise.allSettled([loadTools(),loadProviders()]);
 }
 
-// Workers AI test
+// Workers AI test with diagnostic details
 async function testAI(){
  const button=document.getElementById("aiTestBtn");
  const message=document.getElementById("aiTestMessage");
@@ -201,7 +214,9 @@ async function testAI(){
   });
 
   if(!data.success){
-   throw new Error(data.error||"AI test failed");
+   const error=new Error(data.error||"AI test failed");
+   error.debug=data.debug;
+   throw error;
   }
 
   message.textContent="AI connection successful!";
@@ -209,6 +224,13 @@ async function testAI(){
    "\n\nAI Response:\n"+data.response;
  }catch(error){
   message.textContent="AI test failed: "+error.message;
+
+  if(error.debug){
+   result.textContent="Debug Details:\n"+
+    JSON.stringify(error.debug,null,2);
+  }else{
+   result.textContent="No debug details received from server.";
+  }
  }finally{
   button.disabled=false;
   button.textContent="Test AI Connection";
