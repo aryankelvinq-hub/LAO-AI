@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,15 +15,17 @@ label{display:block;margin:13px 0 7px;color:#c9ded3}
 input,textarea{width:100%;padding:13px;border:1px solid #315747;border-radius:9px;background:#07130f;color:white;font-size:15px}
 input[type=checkbox]{width:22px;height:22px;vertical-align:middle}
 button{padding:12px 16px;border:0;border-radius:9px;background:#42d99a;color:#052016;font-weight:bold;margin:8px 5px 8px 0;cursor:pointer}
+button:disabled{opacity:.6;cursor:not-allowed}
 button.danger{background:#d95353;color:white}
 button.secondary{background:#294b3d;color:white}
 .card{padding:15px;background:#142b22;border:1px solid #315747;border-radius:12px;margin:12px 0}
 .muted{color:#9ab5a7;font-size:13px}
-.msg{margin:10px 0;color:#55e6a5;overflow-wrap:anywhere}
+.msg{margin:10px 0;color:#55e6a5;overflow-wrap:anywhere;white-space:pre-wrap}
 #error{color:#ff9b9b}
 #dashboard{display:none}
 #login{display:block}
 #providersSection{margin-top:25px}
+#aiResult{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
 </style>
 </head>
 <body>
@@ -43,6 +44,18 @@ button.secondary{background:#294b3d;color:white}
 <div id="dashboard">
 <h2>Welcome, Admin!</h2>
 <button class="secondary" onclick="loadAll()">Refresh All</button>
+
+<section id="aiTestSection">
+<h3>Workers AI Connection Test</h3>
+<div class="card">
+<p class="muted">Send a test prompt to check whether Cloudflare Workers AI is responding.</p>
+<label>Test Prompt</label>
+<textarea id="aiPrompt" rows="3">Hello LAO AI! Reply in Hinglish.</textarea>
+<button id="aiTestBtn" onclick="testAI()">Test AI Connection</button>
+<div id="aiTestMessage" class="msg"></div>
+<div id="aiResult" class="msg"></div>
+</div>
+</section>
 
 <section>
 <h3>AI Tools Management</h3>
@@ -161,6 +174,45 @@ function logout(){
 
 async function loadAll(){
  await Promise.allSettled([loadTools(),loadProviders()]);
+}
+
+// Workers AI test
+async function testAI(){
+ const button=document.getElementById("aiTestBtn");
+ const message=document.getElementById("aiTestMessage");
+ const result=document.getElementById("aiResult");
+ const prompt=document.getElementById("aiPrompt").value.trim();
+
+ result.textContent="";
+
+ if(!prompt){
+  message.textContent="Please enter a test prompt.";
+  return;
+ }
+
+ button.disabled=true;
+ button.textContent="Testing...";
+ message.textContent="Sending request to Workers AI...";
+
+ try{
+  const data=await apiRequest("/admin/ai-test",{
+   method:"POST",
+   body:JSON.stringify({prompt})
+  });
+
+  if(!data.success){
+   throw new Error(data.error||"AI test failed");
+  }
+
+  message.textContent="AI connection successful!";
+  result.textContent="Model: "+(data.model||"Unknown")+
+   "\n\nAI Response:\n"+data.response;
+ }catch(error){
+  message.textContent="AI test failed: "+error.message;
+ }finally{
+  button.disabled=false;
+  button.textContent="Test AI Connection";
+ }
 }
 
 async function loadTools(){
