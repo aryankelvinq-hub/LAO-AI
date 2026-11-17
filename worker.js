@@ -1,6 +1,8 @@
+
 const ALLOWED_ORIGIN = "https://aryankelvinq-hub.github.io";
 const SESSION_HOURS = 6;
 const MAX_BODY_SIZE = 100000;
+const AI_TEST_MODEL = "@cf/zai-org/glm-4.7-flash";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -153,9 +155,15 @@ async function dbRequest(env, table, query = "", options = {}) {
 }
 
 async function readBody(request) {
-  const length = Number(request.headers.get("Content-Length") || 0);
-  if (length > MAX_BODY_SIZE) throw new Error("Request too large");
-  return request.json();
+  const text = await request.text();
+  if (new TextEncoder().encode(text).length > MAX_BODY_SIZE) {
+    throw new Error("Request too large");
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("Invalid JSON body");
+  }
 }
 
 function validBaseUrl(value) {
@@ -190,6 +198,68 @@ async function handleAdmin(request, env, pathname) {
 
   if (pathname === "/admin/verify" && request.method === "GET") {
     return json({ success: true, authenticated: true });
+  }
+
+  // Workers AI connection test - admin only
+  if (pathname === "/admin/ai-test" && request.method === "POST") {
+    if (!env.AI || typeof env.AI.run !== "function") {
+      return json({
+        success: false,
+        error: "Workers AI binding AI is not configured"
+      }, 503);
+    }
+
+    const body = await readBody(request);
+    const prompt = typeof body.prompt === "string"
+      ? body.prompt.trim()
+      : "";
+
+    if (!prompt || prompt.length > 1000) {
+      return json({
+        success: false,
+        error: "Prompt is required and must be under 1000 characters"
+      }, 400);
+    }
+
+    try {
+      const result = await env.AI.run(AI_TEST_MODEL, {
+        messages: [
+          {
+            role: "system",
+            content: "You are LAO AI assistant. Reply briefly and clearly."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_completion_tokens: 256,
+        temperature: 0.3
+      });
+
+      const output =
+        result?.response ||
+        result?.choices?.[0]?.message?.content ||
+        "";
+
+      if (typeof output !== "string" || !output.trim()) {
+        return json({
+          success: false,
+          error: "AI returned an empty response"
+        }, 502);
+      }
+
+      return json({
+        success: true,
+        model: AI_TEST_MODEL,
+        response: output
+      });
+    } catch {
+      return json({
+        success: false,
+        error: "Workers AI request failed. Check model availability and Cloudflare AI usage."
+      }, 502);
+    }
   }
 
   if (pathname === "/admin/tools" && request.method === "GET") {
@@ -395,11 +465,18 @@ export default {
 
       return json({ error: "Not found" }, 404);
     } catch (error) {
-      // Do not expose database responses, secrets, or stack traces.
-      const message = error.message === "Request too large"
-        ? "Request too large"
-        : "Internal server error";
-      return json({ error: message }, error.message === "Request too large" ? 413 : 500);
+      const message =
+        error.message === "Request too large" ? "Request too large" :
+        error.message === "Invalid JSON body" ? "Invalid JSON body" :
+        "Internal server error";
+
+      const status =
+        error.message === "Request too large" ? 413 :
+        error.message === "Invalid JSON body" ? 400 :
+        500;
+
+      return json({ error: message }, status);
     }
   }
 };
+      
