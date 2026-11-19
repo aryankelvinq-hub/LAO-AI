@@ -8,7 +8,7 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:radial-gradient(circle at top left,#07382b,#061410 55%);color:#effff8;font-family:Arial,sans-serif}
-header{height:68px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;background:#071b15;border-bottom:1px solid #245044;position:sticky;top:0}
+header{height:68px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;background:#071b15;border-bottom:1px solid #245044;position:sticky;top:0;z-index:10}
 .logo{font-size:27px;font-weight:900}.logo span{color:#15d9a5}
 button{cursor:pointer;color:inherit;font:inherit}
 .menu{background:#102b22;border:1px solid #316052;border-radius:50%;height:43px;width:43px;font-size:23px}
@@ -30,16 +30,19 @@ main{max-width:1000px;margin:auto;padding:20px 16px}
 .page{display:none}.page.active{display:block}
 .back{background:#17372c;border:1px solid #386452;border-radius:10px;padding:10px 15px;margin:10px 0}
 .panel{background:#10231c;border:1px solid #315548;border-radius:18px;padding:18px;margin-top:15px}
-input,select,textarea{width:100%;background:#071610;color:white;border:1px solid #34594b;border-radius:10px;padding:13px;margin:8px 0 15px}
-textarea{min-height:110px}
+input,select,textarea{width:100%;background:#071610;color:white;border:1px solid #34594b;border-radius:10px;padding:13px;margin:8px 0 15px;font-size:15px}
+textarea{min-height:110px;font-family:inherit}
 label{color:#a7c8b9;font-size:13px}
 .action{background:#13d6a1;color:#052219;border:0;padding:12px 17px;border-radius:10px;font-weight:bold}
+.action:disabled{opacity:.6;cursor:not-allowed}
 .note{color:#92ad9f;font-size:12px;line-height:1.6}
-.overlay{display:none;position:fixed;inset:0;background:#0009;z-index:9;align-items:end}
+.overlay{display:none;position:fixed;inset:0;background:#0009;z-index:99;align-items:end}
 .overlay.show{display:flex}
 .sheet{background:#0c2119;border:1px solid #315748;border-radius:22px 22px 0 0;width:100%;padding:22px}
 .sheet button{width:100%;text-align:left;padding:16px;background:#17372a;border:1px solid #315748;border-radius:12px;margin:5px 0}
 footer{text-align:center;color:#759789;padding:25px;font-size:12px}
+#chatMessages{min-height:200px;max-height:400px;overflow-y:auto;background:#071610;border:1px solid #34594b;border-radius:10px;padding:12px;margin-bottom:12px}
+.chat-msg{margin:8px 0;padding:8px;border-radius:6px;background:#0d2119}
 @media(min-width:700px){.cards{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
@@ -55,6 +58,10 @@ footer{text-align:center;color:#759789;padding:25px;font-size:12px}
   <p>Your creative studio. Your tools. Your creativity.</p>
  </div>
  <div class="cards">
+  <button class="card" style="--c:#16d9a5" onclick="openTool('chat')">
+   <div class="cardtop"><span class="symbol">💬</span><span class="tag">LIVE</span></div>
+   <div><h2>AI Chat Assistant</h2><p>Hindi · Hinglish · English · Urdu</p></div>
+  </button>
   <button class="card" style="--c:#16d9a5" onclick="openTool('typography')">
    <div class="cardtop"><span class="symbol">Tт</span><span class="tag">TEXT</span></div>
    <div><h2>Kinetic Typography</h2><p>Animated text from your audio</p></div>
@@ -95,6 +102,21 @@ footer{text-align:center;color:#759789;padding:25px;font-size:12px}
  <div class="pills"><span class="pill">Public access</span><span class="pill">Free where available</span><span class="pill">No subscription</span></div>
 </section>
 
+<section id="chat" class="page">
+ <button class="back" onclick="home()">← Back</button>
+ <h1>AI Chat Assistant</h1>
+ <div class="panel">
+  <div id="chatMessages">
+   <p class="note">Namaste! Main LAO AI hoon. Hindi, Hinglish, English ya Urdu mein poochho.</p>
+  </div>
+  <label>Your message</label>
+  <textarea id="chatInput" placeholder="Type your message..." rows="3"></textarea>
+  <button class="action" id="chatSendBtn" onclick="sendChat()">Send Message</button>
+  <button class="back" onclick="clearChat()" style="margin-left:8px">Clear Chat</button>
+  <p class="note">Free tier: ~50-100 messages/day. Powered by Cloudflare Workers AI.</p>
+ </div>
+</section>
+
 <section id="typography" class="page"><button class="back" onclick="home()">← Back</button><h1>Kinetic Typography</h1><div class="panel"><label>Your text</label><textarea placeholder="Write your animated text..."></textarea><label>Animation style</label><select><option>Neon Bounce</option><option>Word by Word</option><option>Cinematic</option></select><p class="note">Rendering engine connection pending.</p></div></section>
 
 <section id="captions" class="page"><button class="back" onclick="home()">← Back</button><h1>Auto Captions</h1><div class="panel"><label>Language</label><select><option>Hindi</option><option>Hinglish</option><option>English</option><option>Urdu</option></select><label>Choose video/audio</label><input type="file" accept="video/*,audio/*"><p class="note">Speech-to-text provider connection pending.</p></div></section>
@@ -123,6 +145,7 @@ footer{text-align:center;color:#759789;padding:25px;font-size:12px}
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeMenu()">
  <div class="sheet">
   <h2>Quick Menu</h2>
+  <button onclick="openTool('chat')">💬 AI Chat</button>
   <button onclick="openTool('tutorials')">▶ YouTube Tutorials</button>
   <button onclick="openTool('telegram')">➤ Telegram Direct Chat</button>
   <button onclick="openTool('api')">⚙ API Preferences</button>
@@ -132,15 +155,88 @@ footer{text-align:center;color:#759789;padding:25px;font-size:12px}
 </div>
 
 <script>
-const pages=['home','typography','captions','script','voice','effects','audio','bg','video','image','tutorials','telegram','admin','api'];
+const CHAT_API = "https://laoai-v2.aryankelvinq.workers.dev";
+
+const pages=['home','chat','typography','captions','script','voice','effects','audio','bg','video','image','tutorials','telegram','admin','api'];
 function show(id){pages.forEach(p=>{let e=document.getElementById(p);if(e)e.classList.toggle('active',p===id)});window.scrollTo(0,0)}
 function openTool(id){closeMenu();show(id)}
 function home(){show('home')}
 function menu(){document.getElementById('overlay').classList.add('show')}
 function closeMenu(){document.getElementById('overlay').classList.remove('show')}
 function speak(){let t=document.getElementById('speechText').value;if(!t.trim())return alert('Enter text first');if(!window.speechSynthesis)return alert('Voice preview not supported');speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang=document.getElementById('lang').value;let voices=speechSynthesis.getVoices().filter(v=>v.lang.startsWith(u.lang.slice(0,2)));let female=document.getElementById('gender').value==='Female';let chosen=voices.find(v=>female?/female|zira|samantha/i.test(v.name):/male|david|mark/i.test(v.name));if(chosen)u.voice=chosen;speechSynthesis.speak(u)}
+
+// ===== CHAT LOGIC =====
+let chatHistory = [];
+
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function addChatMessage(label, text, color) {
+  const box = document.getElementById("chatMessages");
+  const div = document.createElement("div");
+  div.className = "chat-msg";
+  div.style.borderLeft = "3px solid " + color;
+  div.innerHTML = '<strong style="color:' + color + '">' + label + ':</strong><br>' +
+    '<span style="white-space:pre-wrap">' + escapeHtml(text) + '</span>';
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendChat() {
+  const input = document.getElementById("chatInput");
+  const btn = document.getElementById("chatSendBtn");
+  const text = input.value.trim();
+
+  if (!text) return;
+
+  addChatMessage("You", text, "#16d9a5");
+  chatHistory.push({ role: "user", content: text });
+  input.value = "";
+  btn.disabled = true;
+  btn.textContent = "Thinking...";
+
+  try {
+    const response = await fetch(CHAT_API + "/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: chatHistory.slice(-10) })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      addChatMessage("Error", data.error || "Request failed", "#ff9b9b");
+    } else {
+      chatHistory.push({ role: "assistant", content: data.content });
+      addChatMessage("LAO AI", data.content, "#48bce8");
+    }
+  } catch (error) {
+    addChatMessage("Error", "Network error. Check your connection and try again.", "#ff9b9b");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Send Message";
+  }
+}
+
+function clearChat() {
+  chatHistory = [];
+  document.getElementById("chatMessages").innerHTML =
+    '<p class="note">Namaste! Main LAO AI hoon. Hindi, Hinglish, English ya Urdu mein poochho.</p>';
+}
+
+document.addEventListener("keydown", function(e) {
+  const input = document.getElementById("chatInput");
+  if (input && document.activeElement === input && e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendChat();
+  }
+});
+
+// ===== EFFECTS =====
 let effects=['Cinematic Glow','Dreamy Blur','Neon Pulse','Vintage Film','Flash Transition','RGB Split','Soft Focus','Motion Trail','Golden Hour','Dark Drama','Color Pop','Retro VHS','Smooth Zoom','Anime Glow','Newspaper Cut'];
-let box=document.getElementById('effectList');effects.forEach((n,i)=>{let b=document.createElement('button');b.textContent=(i+1)+'. '+n;b.style='margin:5px;background:#17372b;border:1px solid #315748;padding:12px;border-radius:9px';b.onclick=()=>alert('Selected: '+n+'. Rendering engine pending.');box.appendChild(b)});
+let box=document.getElementById('effectList');
+effects.forEach((n,i)=>{let b=document.createElement('button');b.textContent=(i+1)+'. '+n;b.style='margin:5px;background:#17372b;border:1px solid #315748;padding:12px;border-radius:9px;color:white';b.onclick=()=>alert('Selected: '+n+'. Rendering engine pending.');box.appendChild(b)});
 </script>
 </body>
 </html>
