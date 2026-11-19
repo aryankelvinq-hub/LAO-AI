@@ -189,7 +189,6 @@ async function loadAll(){
  await Promise.allSettled([loadTools(),loadProviders()]);
 }
 
-// Workers AI test with diagnostic details
 async function testAI(){
  const button=document.getElementById("aiTestBtn");
  const message=document.getElementById("aiTestMessage");
