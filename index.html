@@ -155,7 +155,7 @@ footer{text-align:center;color:#759789;padding:25px;font-size:12px}
 </div>
 
 <script>
-const CHAT_API = "https://laoai-v2.aryankelvinq.workers.dev";
+const CHAT_API = "https://laoai-v3.aryankelvinq.workers.dev";
 
 const pages=['home','chat','typography','captions','script','voice','effects','audio','bg','video','image','tutorials','telegram','admin','api'];
 function show(id){pages.forEach(p=>{let e=document.getElementById(p);if(e)e.classList.toggle('active',p===id)});window.scrollTo(0,0)}
@@ -165,7 +165,6 @@ function menu(){document.getElementById('overlay').classList.add('show')}
 function closeMenu(){document.getElementById('overlay').classList.remove('show')}
 function speak(){let t=document.getElementById('speechText').value;if(!t.trim())return alert('Enter text first');if(!window.speechSynthesis)return alert('Voice preview not supported');speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang=document.getElementById('lang').value;let voices=speechSynthesis.getVoices().filter(v=>v.lang.startsWith(u.lang.slice(0,2)));let female=document.getElementById('gender').value==='Female';let chosen=voices.find(v=>female?/female|zira|samantha/i.test(v.name):/male|david|mark/i.test(v.name));if(chosen)u.voice=chosen;speechSynthesis.speak(u)}
 
-// ===== CHAT LOGIC =====
 let chatHistory = [];
 
 function escapeHtml(str) {
@@ -233,7 +232,6 @@ document.addEventListener("keydown", function(e) {
   }
 });
 
-// ===== EFFECTS =====
 let effects=['Cinematic Glow','Dreamy Blur','Neon Pulse','Vintage Film','Flash Transition','RGB Split','Soft Focus','Motion Trail','Golden Hour','Dark Drama','Color Pop','Retro VHS','Smooth Zoom','Anime Glow','Newspaper Cut'];
 let box=document.getElementById('effectList');
 effects.forEach((n,i)=>{let b=document.createElement('button');b.textContent=(i+1)+'. '+n;b.style='margin:5px;background:#17372b;border:1px solid #315748;padding:12px;border-radius:9px;color:white';b.onclick=()=>alert('Selected: '+n+'. Rendering engine pending.');box.appendChild(b)});
