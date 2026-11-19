@@ -1,8 +1,8 @@
-
 const ALLOWED_ORIGIN = "https://aryankelvinq-hub.github.io";
 const SESSION_HOURS = 6;
 const MAX_BODY_SIZE = 100000;
-const AI_TEST_MODEL = "@cf/zai-org/glm-4.7-flash";
+const AI_TEST_MODEL = "@cf/meta/llama-3.1-8b-instruct";
+const CHAT_MODEL = "@cf/meta/llama-3.1-8b-instruct";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -177,6 +177,78 @@ function validBaseUrl(value) {
   }
 }
 
+// Empty response fix — reasoning_content ko content mein promote karo
+function normalizeAIOutput(result) {
+  let output = result?.response || result?.choices?.[0]?.message?.content || "";
+
+  if ((!output || !output.trim()) && result?.choices?.[0]?.message?.reasoning_content) {
+    output = result.choices[0].message.reasoning_content;
+  }
+
+  return typeof output === "string" ? output.trim() : "";
+}
+
+// ===== PUBLIC CHAT ENDPOINT =====
+async function handleChat(request, env) {
+  if (request.method !== "POST") {
+    return json({ error: "Method not allowed" }, 405);
+  }
+
+  if (!env.AI || typeof env.AI.run !== "function") {
+    return json({ success: false, error: "AI binding not configured" }, 503);
+  }
+
+  const body = await readBody(request);
+  const messages = body.messages;
+
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > 20) {
+    return json({ success: false, error: "Invalid messages array (1-20 allowed)" }, 400);
+  }
+
+  for (const m of messages) {
+    if (!m || typeof m.content !== "string" || m.content.length > 4000) {
+      return json({ success: false, error: "Each message must be a string under 4000 chars" }, 400);
+    }
+    if (!["user", "assistant", "system"].includes(m.role)) {
+      return json({ success: false, error: "Invalid role" }, 400);
+    }
+  }
+
+  try {
+    const result = await env.AI.run(CHAT_MODEL, {
+      messages: [
+        {
+          role: "system",
+          content: "You are LAO AI assistant. Always reply in the same language the user writes in — Hindi, Hinglish, English, or Urdu. Be helpful, friendly, and concise."
+        },
+        ...messages.slice(-10)
+      ],
+      max_completion_tokens: 512,
+      temperature: 0.7
+    });
+
+    const output = normalizeAIOutput(result);
+
+    if (!output) {
+      return json({
+        success: false,
+        error: "AI returned an empty response. Try rephrasing your message."
+      }, 502);
+    }
+
+    return json({
+      success: true,
+      content: output,
+      model: CHAT_MODEL
+    });
+  } catch (error) {
+    return json({
+      success: false,
+      error: "AI request failed. Check Workers AI usage limits."
+    }, 502);
+  }
+}
+
 async function handleAdmin(request, env, pathname) {
   if (pathname === "/admin/login" && request.method === "POST") {
     const body = await readBody(request);
@@ -200,7 +272,6 @@ async function handleAdmin(request, env, pathname) {
     return json({ success: true, authenticated: true });
   }
 
-  // Workers AI connection test - admin only
   if (pathname === "/admin/ai-test" && request.method === "POST") {
     if (!env.AI || typeof env.AI.run !== "function") {
       return json({
@@ -226,7 +297,7 @@ async function handleAdmin(request, env, pathname) {
         messages: [
           {
             role: "system",
-            content: "You are LAO AI assistant. Reply briefly and clearly."
+            content: "You are LAO AI assistant. Reply briefly and clearly in the user's language."
           },
           {
             role: "user",
@@ -237,12 +308,9 @@ async function handleAdmin(request, env, pathname) {
         temperature: 0.3
       });
 
-      const output =
-        result?.response ||
-        result?.choices?.[0]?.message?.content ||
-        "";
+      const output = normalizeAIOutput(result);
 
-      if (typeof output !== "string" || !output.trim()) {
+      if (!output) {
         return json({
           success: false,
           error: "AI returned an empty response"
@@ -459,6 +527,10 @@ export default {
         return json({ status: "online", service: "LAO AI Backend" });
       }
 
+      if (pathname === "/api/chat" && request.method === "POST") {
+        return await handleChat(request, env);
+      }
+
       if (pathname.startsWith("/admin/")) {
         return await handleAdmin(request, env, pathname);
       }
@@ -479,4 +551,3 @@ export default {
     }
   }
 };
-      
